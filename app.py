@@ -3,16 +3,17 @@ import sys
 from flask import Flask, request, Response, send_from_directory
 import requests
 
-# Force unbuffered streaming output for Render logs
+# Force unbuffered stdout streaming for Render log processing
 os.environ["PYTHONUNBUFFERED"] = "1"
 
 app = Flask(__name__, static_folder='.')
 
-# Secure environment variable pickup for your API key
+# Secure environment variable lookup for your API credentials
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 @app.route('/')
 def serve_index():
+    # Serves the index.html landing asset directly
     return send_from_directory('.', 'index.html')
 
 @app.route('/stream', methods=['POST'])
@@ -29,12 +30,19 @@ def handle_stream():
         }]
     }
 
-    # PRODUCTION FIXED ENDPOINT: Uses the official post-May 2026 GA model string path
+    # STANDARD PRODUCTION STREAMING PATH
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?key={GEMINI_API_KEY}"
     
     def generate():
         try:
-            response = requests.post(api_url, json=payload, headers={'Content-Type': 'application/json'}, stream=True, timeout=15)
+            response = requests.post(
+                api_url, 
+                json=payload, 
+                headers={'Content-Type': 'application/json'}, 
+                stream=True, 
+                timeout=15
+            )
+            
             if response.status_code == 200:
                 for line in response.iter_lines(chunk_size=1, decode_unicode=True):
                     if line:
@@ -58,8 +66,3 @@ def handle_stream():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
-
-
-    
-    
-    
