@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VectorAI Interface</title>
+    <title>VectorAI System Console</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #0d1117; color: #c9d1d9; display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
@@ -23,7 +23,7 @@
     <header>VectorAI System Console</header>
 
     <div id="chat-container">
-        <div class="message bot">How can I assist you today? Ask me anything.</div>
+        <div class="message bot">System ready. Enter your instruction below.</div>
     </div>
 
     <div id="input-area">
@@ -49,11 +49,11 @@
                 const response = await fetch('/stream', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text }) // Crucial fix: Maps to data.get('message')
+                    body: JSON.stringify({ message: text })
                 });
 
                 if (!response.ok) {
-                    botMessageDiv.textContent = `Server Error status (${response.status})`;
+                    botMessageDiv.textContent = `Server Connection Failure (${response.status})`;
                     return;
                 }
 
