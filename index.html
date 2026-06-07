@@ -15,7 +15,10 @@
         #input-area { background-color: #161b22; padding: 15px; border-top: 1px solid #30363d; display: flex; gap: 10px; }
         #msg-input { flex: 1; background-color: #0d1117; border: 1px solid #30363d; border-radius: 20px; padding: 12px 20px; color: #c9d1d9; font-size: 1rem; outline: none; }
         #msg-input:focus { border-color: #58a6ff; }
-        #send-btn { background-color: #1f6feb; color: #ffffff; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        #send-btn { background-color: #1f6feb; color: #ffffff; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s; }
+        #send-btn:hover { background-color: #388bfd; }
+        #send-btn:disabled { background-color: #30363d; cursor: not-allowed; }
+        .typing { color: #8b949e; font-style: italic; }
     </style>
 </head>
 <body>
@@ -23,7 +26,7 @@
     <header>VectorAI System Console</header>
 
     <div id="chat-container">
-        <div class="message bot">Console linked. What would you like to process?</div>
+        <div class="message bot">System active. Enter transmission.</div>
     </div>
 
     <div id="input-area">
@@ -36,14 +39,21 @@
         const msgInput = document.getElementById('msg-input');
         const sendBtn = document.getElementById('send-btn');
 
+        function setLoading(isLoading) {
+            sendBtn.disabled = isLoading;
+            msgInput.disabled = isLoading;
+            sendBtn.textContent = isLoading ? '...' : '→';
+        }
+
         async function sendMessage() {
             const text = msgInput.value.trim();
             if (!text) return;
 
             appendMessage(text, 'user');
             msgInput.value = '';
+            setLoading(true);
 
-            const botMessageDiv = appendMessage('', 'bot');
+            const botMessageDiv = appendMessage('▍', 'bot typing');
 
             try {
                 const response = await fetch('/stream', {
@@ -59,17 +69,26 @@
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
-                
+                let fullText = '';
+
                 while (true) {
                     const { value, done } = await reader.read();
                     if (done) break;
-                    
-                    botMessageDiv.textContent += decoder.decode(value, { stream: true });
+                    fullText += decoder.decode(value, { stream: true });
+                    botMessageDiv.textContent = fullText + '▍';
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                 }
 
+                // Remove cursor when done
+                botMessageDiv.textContent = fullText;
+                botMessageDiv.className = 'message bot';
+
             } catch (err) {
                 botMessageDiv.textContent = `Connection error: ${err.message}`;
+                botMessageDiv.className = 'message bot';
+            } finally {
+                setLoading(false);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
             }
         }
 
@@ -84,7 +103,7 @@
 
         sendBtn.addEventListener('click', sendMessage);
         msgInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
+            if (e.key === 'Enter' && !e.shiftKey) sendMessage();
         });
     </script>
 </body>
