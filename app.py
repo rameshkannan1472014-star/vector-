@@ -30,8 +30,8 @@ def handle_stream():
         }]
     }
 
-    # Production Google Gemini Active Core Stream Endpoint
-    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?key={GEMINI_API_KEY}"
+    # MATCHES YOUR EMAIL: Targets the exact model your key is authorized for
+    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:streamGenerateContent?key={GEMINI_API_KEY}"
     
     def generate():
         try:
@@ -45,20 +45,16 @@ def handle_stream():
             
             if response.status_code == 200:
                 buffer = ""
-                # Stream the text safely via a standard raw data chunk buffer
                 for chunk in response.iter_content(chunk_size=512, decode_unicode=True):
                     if chunk:
                         buffer += chunk
-                        # Break up the stream down into clean, processable lines
                         while "\n" in buffer:
                             line, buffer = buffer.split("\n", 1)
                             line = line.strip()
                             
-                            # Standardize SSE format wrappers if present
                             if line.startswith("data:"):
                                 line = line[5:].strip()
                             
-                            # Clean up outer layout array brackets
                             if not line or line in ["[", "]", ","]:
                                 continue
                                 
@@ -68,10 +64,9 @@ def handle_stream():
                                 yield text_content
                                 sys.stdout.flush()
                             except (ValueError, KeyError, IndexError):
-                                # Safely bypass internal metadata structural changes
                                 pass
             else:
-                yield f"Google Stream Connection Refused ({response.status_code}). Verify your key limits."
+                yield f"Google Stream Connection Refused ({response.status_code}). Verify your key matches the model."
         except Exception as e:
             yield f"Streaming Exception Interrupted: {str(e)}"
 
