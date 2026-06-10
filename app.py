@@ -3,10 +3,12 @@ import sys
 from flask import Flask, request, Response, send_from_directory
 import requests
 
+# Ensure terminal outputs update immediately in the Render log pipeline
 os.environ["PYTHONUNBUFFERED"] = "1"
 
 app = Flask(__name__, static_folder='.')
 
+# Grabs your active credentials from the Render Environment panel
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 @app.route('/')
@@ -27,8 +29,8 @@ def handle_stream():
         }]
     }
 
-    # CORRECTED PRODUCTION URL: Uses the correct stable path string for 1.5-flash
-    api_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    # MATCHES GOOGLE EMAIL: Points exactly to your project's active model string
+    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={GEMINI_API_KEY}"
     
     def generate():
         try:
@@ -49,7 +51,7 @@ def handle_stream():
                     err_payload = response.json()
                     yield f"Google API Error ({response.status_code}): {err_payload['error']['message']}"
                 except:
-                    yield f"Google API Error ({response.status_code}). Check your deployment configurations."
+                    yield f"Google API Error ({response.status_code}). Check your deployment model string matches."
         except Exception as e:
             yield f"Engine Processing Exception: {str(e)}"
 
