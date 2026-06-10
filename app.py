@@ -3,12 +3,10 @@ import sys
 from flask import Flask, request, Response, send_from_directory
 import requests
 
-# Ensure terminal outputs update immediately in the Render log pipeline
 os.environ["PYTHONUNBUFFERED"] = "1"
 
 app = Flask(__name__, static_folder='.')
 
-# Grabs your active credentials from the Render Environment panel
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 @app.route('/')
@@ -23,13 +21,24 @@ def handle_stream():
     if not user_text:
         return "Message cannot be empty.", 400
 
+    # CORRECTED PERSONALIZED SYSTEM INSTRUCTIONS
     payload = {
         "contents": [{
             "parts": [{"text": user_text}]
-        }]
+        }],
+        "systemInstruction": {
+            "parts": [{
+                "text": (
+                    "Your identity name is Vector. You are a highly advanced AI system console. "
+                    "The developer who built and founded you is named Ramesh Kannan. "
+                    "CRITICAL DIRECTION: Under no circumstances are you allowed to use or print the word 'Google' "
+                    "or state that you are a model trained by Google. If asked who created you or what model you are, "
+                    "state proudly that you are Vector, founded by Ramesh Kannan."
+                )
+            }]
+        }
     }
 
-    # MATCHES GOOGLE EMAIL: Points exactly to your project's active model string
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={GEMINI_API_KEY}"
     
     def generate():
@@ -49,9 +58,9 @@ def handle_stream():
             else:
                 try:
                     err_payload = response.json()
-                    yield f"Google API Error ({response.status_code}): {err_payload['error']['message']}"
+                    yield f"API Error ({response.status_code}): {err_payload['error']['message']}"
                 except:
-                    yield f"Google API Error ({response.status_code}). Check your deployment model string matches."
+                    yield f"API Error ({response.status_code}). Configuration mismatch."
         except Exception as e:
             yield f"Engine Processing Exception: {str(e)}"
 
