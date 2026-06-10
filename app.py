@@ -27,8 +27,8 @@ def handle_stream():
         }]
     }
 
-    # Stable free-tier endpoint layout
-    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    # CORRECTED PRODUCTION URL: Uses the correct stable path string for 1.5-flash
+    api_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     
     def generate():
         try:
@@ -49,7 +49,7 @@ def handle_stream():
                     err_payload = response.json()
                     yield f"Google API Error ({response.status_code}): {err_payload['error']['message']}"
                 except:
-                    yield f"Google API Error ({response.status_code}). Check your Render environment key settings."
+                    yield f"Google API Error ({response.status_code}). Check your deployment configurations."
         except Exception as e:
             yield f"Engine Processing Exception: {str(e)}"
 
