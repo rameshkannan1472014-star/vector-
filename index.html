@@ -1,110 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VectorAI System Console</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #0d1117; color: #c9d1d9; display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
-        header { background-color: #161b22; padding: 15px; text-align: center; border-bottom: 1px solid #30363d; font-size: 1.1rem; font-weight: bold; color: #58a6ff; }
-        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .message { padding: 12px 16px; border-radius: 12px; max-width: 85%; line-height: 1.5; word-wrap: break-word; font-size: 0.95rem; }
-        .user { background-color: #1f6feb; color: #ffffff; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .bot { background-color: #161b22; color: #c9d1d9; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #30363d; white-space: pre-wrap; }
-        #input-area { background-color: #161b22; padding: 15px; border-top: 1px solid #30363d; display: flex; gap: 10px; }
-        #msg-input { flex: 1; background-color: #0d1117; border: 1px solid #30363d; border-radius: 20px; padding: 12px 20px; color: #c9d1d9; font-size: 1rem; outline: none; }
-        #msg-input:focus { border-color: #58a6ff; }
-        #send-btn { background-color: #1f6feb; color: #ffffff; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s; }
-        #send-btn:hover { background-color: #388bfd; }
-        #send-btn:disabled { background-color: #30363d; cursor: not-allowed; }
-        .typing { color: #8b949e; font-style: italic; }
-    </style>
-</head>
-<body>
-
-    <header>VectorAI System Console</header>
-
-    <div id="chat-container">
-        <div class="message bot">System active. Enter transmission.</div>
-    </div>
-
-    <div id="input-area">
-        <input type="text" id="msg-input" placeholder="Ask anything..." autocomplete="off">
-        <button id="send-btn">→</button>
-    </div>
-
-    <script>
-        const chatContainer = document.getElementById('chat-container');
-        const msgInput = document.getElementById('msg-input');
-        const sendBtn = document.getElementById('send-btn');
-
-        function setLoading(isLoading) {
-            sendBtn.disabled = isLoading;
-            msgInput.disabled = isLoading;
-            sendBtn.textContent = isLoading ? '...' : '→';
-        }
-
-        async function sendMessage() {
-            const text = msgInput.value.trim();
-            if (!text) return;
-
-            appendMessage(text, 'user');
-            msgInput.value = '';
-            setLoading(true);
-
-            const botMessageDiv = appendMessage('▍', 'bot typing');
-
-            try {
-                const response = await fetch('/stream', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
-                });
-
-                if (!response.ok) {
-                    botMessageDiv.textContent = `Server Connection Failure (${response.status})`;
-                    return;
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let fullText = '';
-
-                while (true) {
-                    const { value, done } = await reader.read();
-                    if (done) break;
-                    fullText += decoder.decode(value, { stream: true });
-                    botMessageDiv.textContent = fullText + '▍';
-                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                }
-
-                // Remove cursor when done
-                botMessageDiv.textContent = fullText;
-                botMessageDiv.className = 'message bot';
-
-            } catch (err) {
-                botMessageDiv.textContent = `Connection error: ${err.message}`;
-                botMessageDiv.className = 'message bot';
-            } finally {
-                setLoading(false);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-        }
-
-        function appendMessage(text, sender) {
-            const div = document.createElement('div');
-            div.className = `message ${sender}`;
-            div.textContent = text;
-            chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            return div;
-        }
-
-        sendBtn.addEventListener('click', sendMessage);
-        msgInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) sendMessage();
-        });
-    </script>
-</body>
-</html>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta name="theme-color" content="#080d18"><title>Vector Code AI</title>
+<style>
+:root{color-scheme:dark;--bg:#080d18;--panel:#101827;--panel2:#0c1422;--line:#24334a;--text:#e7edf7;--muted:#91a1b8;--blue:#4c8dff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100dvh}
+header{height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#0b1220;position:sticky;top:0;z-index:3}.brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:16px}.mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(145deg,#2768d9,#54d6e8);display:grid;place-items:center;color:white;font-weight:900}.status{font-size:11px;color:var(--muted)}
+main{max-width:950px;margin:0 auto;padding:18px 14px 36px}.intro{margin:6px 0 18px}.intro h1{font-size:23px;margin:0 0 4px}.intro p{margin:0;color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:13px}.panel h2{font-size:13px;margin:0 0 11px;color:#b9c9df;text-transform:uppercase;letter-spacing:.7px}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 5px}input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px;color:var(--text);font:inherit;outline:none}textarea{min-height:110px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:var(--blue)}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}button{border:1px solid var(--line);background:#17243a;color:var(--text);padding:10px 13px;border-radius:9px;font:600 13px system-ui;cursor:pointer}button.primary{background:var(--blue);border-color:var(--blue);color:white}button:disabled{opacity:.5;cursor:wait}.hint,.small{font-size:12px;color:var(--muted);margin-top:8px}.step{padding:9px 10px;border:1px solid var(--line);border-radius:8px;margin:7px 0;background:#0c1524}.file{border:1px solid var(--line);border-radius:9px;margin:9px 0;overflow:hidden}.file summary{padding:10px;background:#0d1727;cursor:pointer;color:#9ec4ff;font-weight:650}.file pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:360px;overflow:auto;padding:10px;margin:0;font:12px/1.5 ui-monospace,monospace;background:#080e19;color:#d5e1f0}.notice,.error,.success{padding:10px;border-radius:8px;margin:10px 0;background:#13243a;color:#b9d7ff;overflow-wrap:anywhere}.error{background:#351d28;color:#ffc2cc}.success{background:#123329;color:#a8f0ce}.hidden{display:none!important}
+@media(max-width:600px){main{padding:14px 10px 28px}.row{grid-template-columns:1fr}.panel{padding:12px}.intro h1{font-size:21px}}
+</style></head><body>
+<header><div class="brand"><span class="mark">V</span> Vector Code AI</div><span class="status" id="connection">Not connected</span></header>
+<main><section class="intro"><h1>Build beyond your phone.</h1><p>Lightweight mobile workspace. AI planning and code generation run on the server.</p></section>
+<section class="panel" id="setup"><h2>Secure connection</h2><label>App access key</label><input id="accessKey" type="password" autocomplete="off" placeholder="Your Render APP_ACCESS_KEY"><div class="hint">The key is sent only to this server. Never enter your GitHub token or AI API key here.</div><div class="actions"><button class="primary" id="connectBtn">Connect</button></div></section>
+<section class="panel"><h2>GitHub project</h2><label>Repository</label><select id="repo"><option value="">Connect first to load repositories</option></select><div class="row"><div><label>Base branch</label><input id="baseBranch" value="main"></div><div><label>New working branch</label><input id="newBranch" value="vector-ai/first-task"></div></div><div class="actions"><button id="refreshRepos">Refresh repositories</button><button id="loadFiles">Browse files</button></div><div id="fileList" class="hint"></div></section>
+<section class="panel"><h2>Tell Vector what to build</h2><label>Engineering task</label><textarea id="task" placeholder="Example: Add a responsive settings page. Inspect the project first, preserve its existing design, and add basic validation."></textarea><div class="actions"><button class="primary" id="planBtn">1. Plan task</button><button id="generateBtn" disabled>2. Generate code</button></div><div class="hint">Large jobs are split into reviewable steps. Each generation step can change up to 6 files.</div><div id="planResult"></div></section>
+<section class="panel hidden" id="reviewPanel"><h2>Review proposed changes</h2><div id="changeSummary"></div><div id="changes"></div><label>Commit message</label><input id="commitMessage" value="Implement changes with Vector Code AI"><div class="row"><div><label>New branch name</label><input id="commitBranch" value="vector-ai/first-task"></div><div class="actions" style="align-items:end"><button class="primary" id="commitBtn">3. Commit reviewed changes</button></div></div><div class="hint">Creates a new branch; your base branch remains unchanged.</div></section><div id="notice" aria-live="polite"></div></main>
+<script>
+var $=function(id){return document.getElementById(id)},appKey="",currentPlan=null,proposed=null;
+function headers(){return {"X-App-Key":appKey,"Content-Type":"application/json"}}
+function note(msg,type){var e=$("notice");e.className=type||"notice";e.textContent=msg}
+async function api(url,options){options=options||{};options.headers=headers();var r=await fetch(url,options),d=await r.json().catch(function(){return {error:"Invalid server response"}});if(!r.ok)throw new Error(d.error||"Request failed ("+r.status+")");return d}
+function busy(b,on,label){if(on){b.dataset.old=b.textContent;b.textContent=label||"Working...";b.disabled=true}else{b.textContent=b.dataset.old||b.textContent;b.disabled=false}}
+async function connect(){appKey=$("accessKey").value.trim();if(!appKey){note("Enter the access key configured on Render.","error");return}try{var c=await api("/api/config");$("connection").textContent=(c.ai_ready?"AI ready":"AI key missing")+" · "+(c.github_ready?"GitHub ready":"GitHub token missing");$("setup").classList.add("hidden");await loadRepos();note("Connected. Choose a repository and describe your coding task.","success")}catch(e){appKey="";note(e.message,"error")}}
+async function loadRepos(){var a=await api("/api/github/repos"),s=$("repo");s.innerHTML="";a.forEach(function(x){var o=document.createElement("option");o.value=x.full_name;o.textContent=x.full_name+(x.private?" · private":"");o.dataset.branch=x.default_branch;s.appendChild(o)});if(!a.length)s.innerHTML='<option value="">No repositories found</option>';syncBranch()}
+function syncBranch(){var o=$("repo").selectedOptions[0];if(o&&o.dataset.branch)$("baseBranch").value=o.dataset.branch}
+async function browse(){var d=await api("/api/github/tree?repo="+encodeURIComponent($("repo").value)+"&branch="+encodeURIComponent($("baseBranch").value));$("fileList").textContent=d.files.slice(0,120).map(function(x){return x}).join(" · ")}
+async function plan(){var b=$("planBtn");busy(b,true,"Planning...");$("generateBtn").disabled=true;try{var d=await api("/api/code/plan",{method:"POST",body:JSON.stringify({repo:$("repo").value,branch:$("baseBranch").value,task:$("task").value})});currentPlan=d;$("planResult").innerHTML="";var s=document.createElement("div");s.className="notice";s.textContent=d.summary||"Plan ready";$("planResult").appendChild(s);(d.steps||[]).forEach(function(x,i){var e=document.createElement("div");e.className="step";e.textContent=(i+1)+". "+x;$("planResult").appendChild(e)});var f=document.createElement("p");f.className="hint";f.textContent="Files to inspect: "+(d.files_to_inspect||[]).join(", ");$("planResult").appendChild(f);if((d.files_to_inspect||[]).length){$("generateBtn").disabled=false;note("Plan ready. Review it, then generate the proposed code.","success")}}catch(e){note(e.message,"error")}finally{busy(b,false)}}
+function addFile(path,content){var d=document.createElement("details");d.className="file";var s=document.createElement("summary"),p=document.createElement("pre");s.textContent=path;p.textContent=content;d.appendChild(s);d.appendChild(p);$("changes").appendChild(d)}
+async function generate(){var b=$("generateBtn");busy(b,true,"Generating...");try{var d=await api("/api/code/generate",{method:"POST",body:JSON.stringify({repo:$("repo").value,branch:$("baseBranch").value,task:$("task").value,plan:currentPlan})});proposed=d;if(!d.changes||!d.changes.length){note((d.notes||["No changes generated."]).join(" "),"error");return}$("reviewPanel").classList.remove("hidden");$("changeSummary").textContent=d.summary||"Review each complete file below."; $("changes").innerHTML="";d.changes.forEach(function(x){addFile(x.path,x.content)});$("commitBranch").value=$("newBranch").value||"vector-ai/first-task";note("Code generated. Review the files before committing.","success");$("reviewPanel").scrollIntoView({behavior:"smooth"})}catch(e){note(e.message,"error")}finally{busy(b,false)}}
+async function commit(){if(!proposed||!proposed.changes||!proposed.changes.length)return;var branch=$("commitBranch").value.trim();if(!confirm("Commit "+proposed.changes.length+" reviewed file(s) to new branch "+branch+"? The base branch will not be changed."))return;var b=$("commitBtn");busy(b,true,"Committing...");try{var d=await api("/api/github/commit",{method:"POST",body:JSON.stringify({confirm:true,repo:$("repo").value,base_branch:$("baseBranch").value,branch:branch,message:$("commitMessage").value,changes:proposed.changes})});note("Committed to "+d.branch+". Inspect it on GitHub: "+d.url,"success")}catch(e){note(e.message,"error")}finally{busy(b,false)}}
+$("connectBtn").addEventListener("click",connect);$("refreshRepos").addEventListener("click",function(){loadRepos().catch(function(e){note(e.message,"error")})});$("repo").addEventListener("change",syncBranch);$("loadFiles").addEventListener("click",function(){browse().catch(function(e){note(e.message,"error")})});$("planBtn").addEventListener("click",plan);$("generateBtn").addEventListener("click",generate);$("commitBtn").addEventListener("click",commit);
+</script></body></html>
