@@ -174,7 +174,7 @@ def commit():
         paths=set()
         for x in changes:
             p=x.get("path",""); content=x.get("content")
-            if not isinstance(p,str) or not p or p.startswith("/") or ".." in p.split("/") or "\\\\" in p:
+            if not isinstance(p,str) or not p or p.startswith("/") or ".." in p.split("/") or chr(92) in p:
                 return err("Invalid file path.")
             if p in paths: return err("A file appears more than once in the change set.")
             if not isinstance(content,str) or len(content)>50000: return err("A proposed file is too large or invalid.")
