@@ -1,7 +1,9 @@
 import os, json, base64, re, hmac, secrets, time
 import requests
 from flask import Flask, request, jsonify, send_from_directory, redirect, session, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 app=Flask(__name__,static_folder=".")
+app.wsgi_app=ProxyFix(app.wsgi_app,x_proto=1,x_host=1)
 app.secret_key=os.getenv("FLASK_SECRET_KEY","")
 app.config.update(SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE="Lax",SESSION_COOKIE_SECURE=True,PERMANENT_SESSION_LIFETIME=60*60*24*7)
 GH="https://api.github.com"; MODEL=os.getenv("GEMINI_MODEL","gemini-3.1-flash-lite"); TIMEOUT=(8,90)
@@ -28,7 +30,7 @@ def gh(url,params=None):
     return r.json()
 def repo_name(v):
     v=(v or "").strip()
-    if not re.fullmatch(r"[\\w.-]+/[\\w.-]+",v): raise ValueError("Repository must use owner/name format.")
+    if not re.fullmatch(r"[\w.-]+/[\w.-]+",v): raise ValueError("Repository must use owner/name format.")
     return v
 def api(repo,path=""): return GH+"/repos/"+repo+path
 def ai(prompt,system):
@@ -44,7 +46,7 @@ def ai(prompt,system):
     if not c: raise RuntimeError("AI returned no response.")
     return "".join(p.get("text","") for p in c[0].get("content",{}).get("parts",[]))
 def obj(s):
-    s=re.sub(r"^\\s*```(?:json)?|\\s*```\\s*$","",s.strip())
+    s=re.sub(r"^\s*```(?:json)?|\s*```\s*$","",s.strip())
     try: return json.loads(s)
     except Exception:
         a,b=s.find("{"),s.rfind("}")
@@ -59,7 +61,7 @@ def readfile(repo,branch,path):
     d=gh(api(repo,"/contents/"+requests.utils.quote(path,safe="/")),{"ref":branch})
     if d.get("encoding")!="base64": raise RuntimeError("Only text files are supported.")
     raw=base64.b64decode(d.get("content",""))
-    if b"\\x00" in raw: raise RuntimeError("Binary files are not supported.")
+    if b"\x00" in raw: raise RuntimeError("Binary files are not supported.")
     return raw.decode("utf-8",errors="replace")
 @app.route("/")
 def home(): return send_from_directory(".","index.html")
@@ -161,7 +163,7 @@ def commit():
         b=request.get_json(force=True)
         if b.get("confirm") is not True: return err("Explicit confirmation is required.",403)
         repo=repo_name(b.get("repo")); base=(b.get("base_branch") or "main").strip(); branch=(b.get("branch") or "").strip(); changes=b.get("changes") or []; message=(b.get("message") or "Apply Vector Code AI changes")[:120]
-        if not re.fullmatch(r"[A-Za-z0-9._/-]{3,100}",branch) or ".." in branch: return err("Choose a valid new branch name.")
+    if not re.fullmatch(r"[\w.-]+/[\w.-]+",v): raise ValueError("Repository must use owner/name format.")
         if not changes or len(changes)>6: return err("Review 1 to 6 file changes before committing.")
         ref=gh(api(repo,"/git/ref/heads/"+requests.utils.quote(base,safe="/"))); parent=ref["object"]["sha"]; parent_data=gh(api(repo,"/git/commits/"+parent)); elements=[]
         for x in changes:
