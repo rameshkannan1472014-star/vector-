@@ -162,23 +162,38 @@ def commit():
     try:
         b=request.get_json(force=True)
         if b.get("confirm") is not True: return err("Explicit confirmation is required.",403)
-        repo=repo_name(b.get("repo")); base=(b.get("base_branch") or "main").strip(); branch=(b.get("branch") or "").strip(); changes=b.get("changes") or []; message=(b.get("message") or "Apply Vector Code AI changes")[:120]
-    if not re.fullmatch(r"[\w.-]+/[\w.-]+",v): raise ValueError("Repository must use owner/name format.")
+        repo=repo_name(b.get("repo"))
+        base=(b.get("base_branch") or "main").strip()
+        branch=(b.get("branch") or "").strip()
+        changes=b.get("changes") or []
+        message=(b.get("message") or "Apply Vector Code AI changes").strip()[:120]
+        if not re.fullmatch(r"[A-Za-z0-9._/-]{1,90}",branch) or branch.startswith("/") or ".." in branch.split("/"):
+            return err("Choose a valid new branch name.")
+        if branch==base: return err("The new branch must be different from the base branch.")
         if not changes or len(changes)>6: return err("Review 1 to 6 file changes before committing.")
-        ref=gh(api(repo,"/git/ref/heads/"+requests.utils.quote(base,safe="/"))); parent=ref["object"]["sha"]; parent_data=gh(api(repo,"/git/commits/"+parent)); elements=[]
+        paths=set()
         for x in changes:
             p=x.get("path",""); content=x.get("content")
-            if not p or p.startswith("/") or ".." in p.split("/") or not isinstance(content,str): return err("Invalid file change.")
-            r=requests.post(api(repo,"/git/blobs"),headers=gh_headers(),json={"content":base64.b64encode(content.encode()).decode(),"encoding":"base64"},timeout=TIMEOUT)
+            if not isinstance(p,str) or not p or p.startswith("/") or ".." in p.split("/") or "\\\\" in p:
+                return err("Invalid file path.")
+            if p in paths: return err("A file appears more than once in the change set.")
+            if not isinstance(content,str) or len(content)>50000: return err("A proposed file is too large or invalid.")
+            paths.add(p)
+        ref=gh(api(repo,"/git/ref/heads/"+requests.utils.quote(base,safe="/")))
+        parent=ref["object"]["sha"]
+        parent_data=gh(api(repo,"/git/commits/"+parent))
+        elements=[]
+        for x in changes:
+            r=requests.post(api(repo,"/git/blobs"),headers=gh_headers(),json={"content":base64.b64encode(x["content"].encode()).decode(),"encoding":"base64"},timeout=TIMEOUT)
             if not r.ok: raise RuntimeError("GitHub blob error: "+r.text[:250])
-            elements.append({"path":p,"mode":"100644","type":"blob","sha":r.json()["sha"]})
+            elements.append({"path":x["path"],"mode":"100644","type":"blob","sha":r.json()["sha"]})
         r=requests.post(api(repo,"/git/trees"),headers=gh_headers(),json={"base_tree":parent_data["tree"]["sha"],"tree":elements},timeout=TIMEOUT)
         if not r.ok: raise RuntimeError("GitHub tree error: "+r.text[:250])
-        r=requests.post(api(repo,"/git/commits"),headers=gh_headers(),json={"message":message,"tree":r.json()["sha"],"parents":[parent]},timeout=TIMEOUT)
+        r=requests.post(api(repo,"/git/commits"),headers=gh_headers(),json={"message":message or "Apply Vector Code AI changes","tree":r.json()["sha"],"parents":[parent]},timeout=TIMEOUT)
         if not r.ok: raise RuntimeError("GitHub commit error: "+r.text[:250])
         sha=r.json()["sha"]
         r=requests.post(api(repo,"/git/refs"),headers=gh_headers(),json={"ref":"refs/heads/"+branch,"sha":sha},timeout=TIMEOUT)
-        if not r.ok: raise RuntimeError("Commit created but branch creation failed: "+r.text[:250])
+        if not r.ok: raise RuntimeError("GitHub could not create the new branch (it may already exist): "+r.text[:250])
         return jsonify({"ok":True,"branch":branch,"commit":sha,"url":"https://github.com/"+repo+"/tree/"+branch})
     except ValueError as e: return err(str(e))
     except Exception as e: return err(str(e),502)
